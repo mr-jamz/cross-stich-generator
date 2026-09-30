@@ -13,6 +13,7 @@ const patternTitle = document.querySelector('#patternTitle');
 const imageMeta = document.querySelector('#imageMeta');
 const downloadButton = document.querySelector('#downloadButton');
 const printButton = document.querySelector('#printButton');
+const modeInputs = document.querySelectorAll('input[name="generationMode"]');
 
 const symbols = '●×■▲◆○+◇□△#%@&★♠♣♥!?:;=';
 let sourceImage = null;
@@ -28,6 +29,7 @@ colorCount.addEventListener('input', () => {
   queueRender();
 });
 showSymbols.addEventListener('change', queueRender);
+modeInputs.forEach(input => input.addEventListener('change', queueRender));
 dropZone.addEventListener('click', () => imageInput.click());
 dropZone.addEventListener('keydown', event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); imageInput.click(); }
@@ -74,13 +76,18 @@ function queueRender() {
 function renderPattern() {
   const width = Number(stitchWidth.value);
   const height = Math.max(1, Math.round(width * sourceImage.naturalHeight / sourceImage.naturalWidth));
+  const mode = document.querySelector('input[name="generationMode"]:checked').value;
   const sample = document.createElement('canvas');
   sample.width = width;
   sample.height = height;
   const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
+  sampleCtx.imageSmoothingEnabled = mode !== 'pixel';
+  if (mode !== 'pixel') sampleCtx.imageSmoothingQuality = 'high';
   sampleCtx.drawImage(sourceImage, 0, 0, width, height);
   const imageData = sampleCtx.getImageData(0, 0, width, height);
-  const palette = buildPalette(imageData.data, Number(colorCount.value));
+  processForMode(imageData.data, width, height, mode);
+  const requestedColors = mode === 'silhouette' ? Math.min(5, Number(colorCount.value)) : Number(colorCount.value);
+  const palette = buildPalette(imageData.data, requestedColors);
   const mapped = mapPixels(imageData.data, palette);
   drawPattern(mapped, palette, width, height);
   drawLegend(palette, mapped, width * height);
@@ -90,7 +97,54 @@ function renderPattern() {
   legendSection.hidden = false;
   downloadButton.disabled = false;
   printButton.disabled = false;
-  patternTitle.textContent = `${width} × ${height} stitch pattern`;
+  const modeName = { pixel: 'Pixel art', portrait: 'Portrait', silhouette: 'Silhouette' }[mode];
+  patternTitle.textContent = `${modeName} · ${width} × ${height} stitches`;
+}
+
+function processForMode(data, width, height, mode) {
+  if (mode === 'portrait') {
+    adjustImage(data, { saturation: 1.04, contrast: 1.08 });
+    return;
+  }
+
+  if (mode === 'pixel') {
+    adjustImage(data, { saturation: 1.28, contrast: 1.18 });
+    return;
+  }
+
+  const cornerSamples = [0, width - 1, (height - 1) * width, height * width - 1];
+  const background = cornerSamples.reduce((color, pixel) => {
+    const index = pixel * 4;
+    color.r += data[index]; color.g += data[index + 1]; color.b += data[index + 2];
+    return color;
+  }, { r: 0, g: 0, b: 0 });
+  background.r /= 4; background.g /= 4; background.b /= 4;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const color = { r: data[i], g: data[i + 1], b: data[i + 2] };
+    const backgroundDistance = Math.sqrt(colorDistance(color, background));
+    const brightness = luminance(color);
+    if (backgroundDistance < 42) {
+      data[i + 3] = 0;
+    } else {
+      const tone = brightness < 75 ? 28 : brightness < 145 ? 78 : brightness < 205 ? 142 : 215;
+      data[i] = Math.round(tone * .78);
+      data[i + 1] = Math.round(tone * .94);
+      data[i + 2] = tone;
+      data[i + 3] = 255;
+    }
+  }
+}
+
+function adjustImage(data, { saturation, contrast }) {
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 80) continue;
+    const gray = luminance({ r: data[i], g: data[i + 1], b: data[i + 2] });
+    for (let channel = 0; channel < 3; channel++) {
+      const saturated = gray + (data[i + channel] - gray) * saturation;
+      data[i + channel] = Math.max(0, Math.min(255, (saturated - 128) * contrast + 128));
+    }
+  }
 }
 
 function buildPalette(data, target) {

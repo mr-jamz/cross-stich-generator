@@ -33,6 +33,15 @@ h1 { margin-bottom: 14px; font-family: Georgia, serif; font-size: clamp(2.6rem, 
 .upload-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: var(--accent); font-size: 1.6rem; margin-bottom: 4px; }
 .drop-zone span:last-child { color: var(--muted); font-size: .9rem; }
 .settings { margin-top: 22px; }
+.mode-picker { margin: 0; padding: 0 0 20px; border: 0; border-bottom: 1px solid var(--line); }
+.mode-picker legend { margin-bottom: 10px; font-size: .9rem; font-weight: 700; }
+.mode-picker { display: grid; grid-template-columns: 1fr; gap: 7px; }
+.mode-picker label { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--line); background: #fafbf8; cursor: pointer; }
+.mode-picker label:has(input:checked) { border-color: var(--teal); background: #eef7f5; box-shadow: inset 3px 0 var(--teal); }
+.mode-picker input { width: 17px; height: 17px; margin: 0; accent-color: var(--teal); }
+.mode-picker span { display: flex; flex-direction: column; gap: 2px; }
+.mode-picker strong { font-size: .84rem; }
+.mode-picker small { color: var(--muted); font-size: .74rem; }
 .settings > label:not(.checkbox-row) { display: flex; justify-content: space-between; gap: 12px; margin: 20px 0 8px; font-size: .9rem; font-weight: 700; }
 output { color: var(--muted); font-size: .82rem; font-weight: 500; }
 input[type="range"] { width: 100%; accent-color: var(--teal); }

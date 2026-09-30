@@ -32,6 +32,22 @@
           </div>
 
           <div class="settings">
+            <fieldset class="mode-picker">
+              <legend>Generation mode</legend>
+              <label>
+                <input type="radio" name="generationMode" value="pixel" checked />
+                <span><strong>Pixel art</strong><small>Hard edges, vivid colors</small></span>
+              </label>
+              <label>
+                <input type="radio" name="generationMode" value="portrait" />
+                <span><strong>Portrait</strong><small>Smoother shading and detail</small></span>
+              </label>
+              <label>
+                <input type="radio" name="generationMode" value="silhouette" />
+                <span><strong>Silhouette</strong><small>Bold shape, clear background</small></span>
+              </label>
+            </fieldset>
+
             <label for="stitchWidth"><span>Pattern width</span><output id="stitchWidthOutput">50 stitches</output></label>
             <input id="stitchWidth" type="range" min="10" max="120" value="50" />
 
